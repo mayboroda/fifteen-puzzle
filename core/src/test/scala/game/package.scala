@@ -1,6 +1,6 @@
 package object game {
 
-  implicit class BoardDebug(board: Board) {
+  implicit class BoardDebug[T](board: Board[T]) {
     def printBoard() = {
       var coll = 0
       println("* * * * *")
@@ -17,4 +17,17 @@ package object game {
     }
   }
 
+  class TestDataProvider(data:Array[Array[Int]]) extends DataProvider[Int] {
+
+    val values:Seq[Int] = {
+      for {
+        (row, rowIndex) <- data.zipWithIndex
+        (col, colIndex) <- row.zipWithIndex
+      } yield data(rowIndex)(colIndex)
+    }
+
+    override def value(index: Int): Int = values(index)
+
+    override def zero(): Int = 0
+  }
 }

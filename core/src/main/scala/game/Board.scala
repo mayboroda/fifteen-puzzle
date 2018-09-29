@@ -3,12 +3,14 @@ package game
 /**
   * Game board that holds numbers for further puzzle game
   */
-class Board(val width:Int, val height:Int) {
 
-  val length = width * height
-  val values:Seq[Int] = generateValues()
+// TODO: Define method that returns a matrix representation of a board
+
+class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
+
+  val length:Int = width * height
   val cells:Array[Cell] = init()
-  var zeroPos:Pos = Pos(width-1, height-1)
+  var zeroPos:Pos = findZeroPos()
 
   /**
     * Initialize game board with random numbers
@@ -16,20 +18,16 @@ class Board(val width:Int, val height:Int) {
   def init(): Array[Cell] = {
     val cells = new Array[Cell](length)
     for((index) <- 0 until length) {
-      cells(index) = Cell(getNumber(index), position(index))
+      cells(index) = Cell(getData(index), position(index))
     }
     cells
   }
 
-  def getNumber(index:Int) : Int = values(index)
+  private def getData(index:Int) : T = dataProvider.value(index)
 
-  def position(index:Int) : Pos = {
+  private def position(index:Int) : Pos = {
     val row = index / width
     Pos(row, index - row*width)
-  }
-
-  def generateValues():Seq[Int] = {
-    for (i <- 1 to length) yield if (i == 16) 0 else i
   }
 
   def move(pos:Pos):Boolean = {
@@ -53,15 +51,27 @@ class Board(val width:Int, val height:Int) {
 
   private def cellIndex(pos:Pos):Int = pos.row * width + pos.col
 
+  // Refactor this if-hell
   private def moveCandidates(start: Pos, end: Pos): Seq[Pos] = {
     if (start.col == end.col) {
-      for (i <- start.row until end.row) yield Pos(i, start.col)
+      if (start.row > end.row) { // from bottom to top
+        for (i <- start.row until end.row by -1) yield Pos(i, start.col)
+      } else { // from top to bottom
+        for (i <- start.row until end.row) yield Pos(i, start.col)
+      }
     } else {
-      for (i <-start.col until end.col) yield Pos(start.row, i)
+      if (start.col > end.col) { // from right to left
+        for (i <-start.col until end.col by -1) yield Pos(start.row, i)
+      } else { // from left to right
+        for (i <-start.col until end.col) yield Pos(start.row, i)
+      }
     }
   }
 
-  case class Cell(value:Int, pos: Pos)
+  // We assume that provider must return us a list with ZERO element
+  private def findZeroPos():Pos = cells.filter(_.value == dataProvider.zero()).map(_.pos).head
+
+  case class Cell(value:T, pos: Pos)
 }
 
 case class Pos(row:Int, col:Int) {

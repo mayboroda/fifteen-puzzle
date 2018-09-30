@@ -4,24 +4,17 @@ package game
   * Game board that holds numbers for further puzzle game
   */
 // TODO: Define method that returns a matrix representation of a board. Just for external use.
-// TODO: Define method that indicates that puzzle is completed
-
 class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
 
-  val length:Int = width * height
-  val cells:Array[Cell] = init()
-  var zeroPos:Pos = findZeroPos()
+  private val length:Int = width * height
+  val cells:Array[Cell] = init(length)
+  private var zeroPos:Pos = findZeroPos()
 
   /**
-    * Initialize game board with data and positions
+    * Returns `true` in case puzzle was ordered as a reference sequence from data provider
+    * @return `true` in case ordered puzzle otherwise `false`
     */
-  def init(): Array[Cell] = {
-    val cells = new Array[Cell](length)
-    for((index) <- 0 until length) {
-      cells(index) = Cell(data(index), position(index))
-    }
-    cells
-  }
+  def ordered():Boolean = cells.map(_.value).toSeq == dataProvider.reference()
 
   private def data(index:Int) : T = dataProvider.value(index)
 
@@ -62,6 +55,17 @@ class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
     } else {
       false
     }
+  }
+
+  /**
+    * Initialize game board with data and positions
+    */
+  private def init(length: Int): Array[Cell] = {
+    val cells = new Array[Cell](length)
+    for((index) <- 0 until length) {
+      cells(index) = Cell(data(index), position(index))
+    }
+    cells
   }
 
   private def cellIndex(pos:Pos):Int = pos.row * width + pos.col

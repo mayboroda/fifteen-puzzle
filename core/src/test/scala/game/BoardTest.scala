@@ -21,7 +21,6 @@ class BoardTest extends FunSuite {
   test("Should not move a cell in case it's not on the same row and column as a zero-cell") {
     val board = new Board(4,4)(leftToRight)
     val desiredPos = Pos(0, 0)
-    assert(board.zeroPos != desiredPos)
 
     assert(!board.move(desiredPos))
   }
@@ -58,6 +57,16 @@ class BoardTest extends FunSuite {
     assert(board.cells(1).value == 0)
   }
 
+  test("Should be ordered with ordered cells") {
+    val board = new Board(4,4)(ordered)
+    assert(board.ordered())
+  }
+
+  test("Should not be ordered with unordered cells") {
+    val board = new Board(4,4)(leftToRight)
+    assert(!board.ordered())
+  }
+
   def leftToRight = new TestDataProvider(Array(
     Array(1,2,3,4),
     Array(5,6,7,0),
@@ -70,6 +79,13 @@ class BoardTest extends FunSuite {
     Array(5,6,7,8),
     Array(9,0,10,11),
     Array(12,13,14,15),
+  ))
+
+  def ordered = new TestDataProvider(Array(
+    Array(1,  2,  3,  4),
+    Array(5,  6,  7,  8),
+    Array(9,  10, 11, 12),
+    Array(13, 14, 15, 0),
   ))
 }
 

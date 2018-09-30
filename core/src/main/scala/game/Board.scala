@@ -4,7 +4,8 @@ package game
   * Game board that holds numbers for further puzzle game
   */
 
-// TODO: Define method that returns a matrix representation of a board
+// TODO: Define method that returns a matrix representation of a board. Just for external use.
+// TODO: Define method that indicates that puzzle is completed
 
 class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
 
@@ -18,12 +19,12 @@ class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
   def init(): Array[Cell] = {
     val cells = new Array[Cell](length)
     for((index) <- 0 until length) {
-      cells(index) = Cell(getData(index), position(index))
+      cells(index) = Cell(data(index), position(index))
     }
     cells
   }
 
-  private def getData(index:Int) : T = dataProvider.value(index)
+  private def data(index:Int) : T = dataProvider.value(index)
 
   private def position(index:Int) : Pos = {
     val row = index / width
@@ -40,7 +41,7 @@ class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
     }
   }
 
-  private def move(list:Seq[Pos]) = {
+  private def move(list:Seq[Pos]):Unit = {
     for (pos <- list.reverse) {
       val zero = cells(cellIndex(zeroPos))
       cells(cellIndex(zeroPos)) = cells(cellIndex(pos))

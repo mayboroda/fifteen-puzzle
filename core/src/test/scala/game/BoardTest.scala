@@ -3,7 +3,7 @@ package game
 import org.scalatest.FunSuite
 
 class BoardTest extends FunSuite {
-  val dataProvider = new RandomNumberDataProvider(16)
+  val dataProvider = new FifteenDataProvider()
 
   test("Board 4x4 should be initialized") {
     val board = new Board(4, 4)(dataProvider)
@@ -14,13 +14,12 @@ class BoardTest extends FunSuite {
         val index = i * board.width + j
         assert(board.cells(index).pos.row == i)
         assert(board.cells(index).pos.col == j)
-        assert(board.cells(index).value != null)
       }
     }
   }
 
   test("Should not move a cell in case it's not on the same row and column as a zero-cell") {
-    val board = new Board(4,4)(dataProvider)
+    val board = new Board(4,4)(leftToRight)
     val desiredPos = Pos(0, 0)
     assert(board.zeroPos != desiredPos)
 
@@ -57,8 +56,6 @@ class BoardTest extends FunSuite {
 
     assert(board.move(start))
     assert(board.cells(1).value == 0)
-
-    board.printBoard()
   }
 
   def leftToRight = new TestDataProvider(Array(

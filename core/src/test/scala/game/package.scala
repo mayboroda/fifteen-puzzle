@@ -1,5 +1,8 @@
 package object game {
 
+  /**
+    * Prints a board cells for debug purposes.
+    */
   implicit class BoardDebug[T](board: Board[T]) {
     def printBoard() = {
       var coll = 0
@@ -17,9 +20,15 @@ package object game {
     }
   }
 
-  class TestDataProvider(data:Array[Array[Int]]) extends DataProvider[Int] {
+  /**
+    * Easy to setup a board with two-dimensional array of integers. It's more visible.
+    * Used for test purpose only.
+    *
+    * @param data Test two dimensional array that emulate a real play-board
+    */
+  class TestDataProvider(data:Array[Array[Int]]) extends FifteenDataProvider {
 
-    val values:Seq[Int] = {
+    override val values:Seq[Int] = {
       for {
         (row, rowIndex) <- data.zipWithIndex
         (col, colIndex) <- row.zipWithIndex

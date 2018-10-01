@@ -65,6 +65,8 @@ class BoardTest extends FunSuite {
   test("Should not be ordered with unordered cells") {
     val board = new Board(4,4)(leftToRight)
     assert(!board.ordered())
+
+    board.printBoard()
   }
 
   def leftToRight = new TestDataProvider(Array(

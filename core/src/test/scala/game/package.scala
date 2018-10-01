@@ -3,20 +3,19 @@ package object game {
   /**
     * Prints a board cells for debug purposes.
     */
-  implicit class BoardDebug[T](board: Board[T]) {
+  //TODO: Change to explicit board type
+  implicit class BoardDebug(board: Board[Int]) {
     def printBoard() = {
       var coll = 0
-      println("* * * * *")
-      for ((cell, index) <- board.cells.zipWithIndex) {
-        if (coll >= board.width-1) {
-          println (s"${cell.value}")
-          coll = 0
-        } else {
-          print(s"${cell.value} ")
-          coll += 1
-        }
+      println(" * * * * * * * * ")
+      val seq = board.twoDimension()
+      for(row <- seq) {
+        for (col <- row) printCell(col)
+        println()
       }
-      println("* * * * *")
+      println(" * * * * * * * * ")
+
+      def printCell(num:Int):Unit = print(if(num > 9) s" $num " else s"  $num ")
     }
   }
 

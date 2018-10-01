@@ -20,7 +20,7 @@ class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
 
   private def position(index:Int) : Pos = {
     val row = index / width
-    Pos(row, index - row*width)
+    Pos(row, index - row*height)
   }
 
   def move(pos:Pos):Boolean = {
@@ -56,7 +56,12 @@ class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
       false
     }
   }
-
+  def twoDimension() : Seq[Seq[T]] = {
+    for (rowIndex <- 0 until width)
+      yield
+        for(colIndex <- 0 until height)
+          yield cells(cellIndex(Pos(rowIndex, colIndex))).value
+  }
   /**
     * Initialize game board with data and positions
     */

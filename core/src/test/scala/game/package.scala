@@ -3,10 +3,8 @@ package object game {
   /**
     * Prints a board cells for debug purposes.
     */
-  //TODO: Change to explicit board type
   implicit class BoardDebug(board: Board[Int]) {
     def printBoard() = {
-      var coll = 0
       println(" * * * * * * * * ")
       val seq = board.twoDimension()
       for(row <- seq) {
@@ -25,7 +23,7 @@ package object game {
     *
     * @param data Test two dimensional array that emulate a real play-board
     */
-  class TestDataProvider(data:Array[Array[Int]]) extends FifteenDataProvider {
+  class TestDataProvider(data:Seq[Seq[Int]]) extends FifteenDataProvider {
 
     override val values:Seq[Int] = {
       for {

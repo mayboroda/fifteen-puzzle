@@ -1,9 +1,9 @@
 subprojects {
+    apply plugin: 'scala'
 
     group 'com.maiboroda'
     version '1.0-SNAPSHOT'
 
-    apply plugin: 'scala'
 
     sourceCompatibility = 1.8
 
@@ -16,5 +16,11 @@ subprojects {
 
         testCompile 'org.scalatest:scalatest_2.12:3.0.5'
         testCompile 'org.scalamock:scalamock_2.12:4.1.0'
+    }
+}
+
+project(':game-cli') {
+    dependencies {
+        compile project(":core")
     }
 }

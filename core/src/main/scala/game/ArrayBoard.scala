@@ -93,3 +93,7 @@ case class LeftToRight(override val from:Int, override val to:Int) extends MoveD
 case class RightToLeft(override val from:Int, override val to:Int) extends MoveDirection(from, to, -1)
 case class TopToBottom(override val from:Int, override val to:Int) extends MoveDirection(from, to, 1)
 case class BottomToTop(override val from:Int, override val to:Int) extends MoveDirection(from, to, -1)
+
+object ClassicArrayFifteenBoard {
+  def apply: Board[Int] = new ArrayBoard[Int](4,4)(new FifteenDataProvider())
+}

@@ -1,101 +1,117 @@
 package game
 
 /**
-  * Game board that holds numbers for further puzzle game
+  * Game board that operates with cells and moving logic of a puzzle game.
+  * Also this class provide a method that can distinguish whether or not a puzzle is ordered or not.
   */
-// TODO: Define method that returns a matrix representation of a board. Just for external use.
-class Board[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) {
+trait Board[T] {
 
-  private val length:Int = width * height
-  val cells:Array[Cell] = init(length)
-  private var zeroPos:Pos = findZeroPos()
+  /**
+    * Method responsible for moving cells on a board according to board rules
+    * Cells can move only vertically or horizontally.
+    * We can move one or more cells at the same time if they are located on (intersect with) same horizontal or
+    * vertical coordinate as a zero cell.
+    *
+    * @param pos position of a cell that should be moved
+    * @return `true` in case cell was moved otherwise `false`
+    */
+  def move(pos:Pos):Boolean
 
   /**
     * Returns `true` in case puzzle was ordered as a reference sequence from data provider
     * @return `true` in case ordered puzzle otherwise `false`
     */
-  def ordered():Boolean = cells.map(_.value).toSeq == dataProvider.reference()
+  def ordered():Boolean
 
-  private def data(index:Int) : T = dataProvider.value(index)
+  /**
+    * Returns a two-dimensional representation of a board.
+    * Result of this method must be used in UI clients
+    * @return two-dimensional array
+    */
+  def twoDimension() : Seq[Seq[T]]
 
-  private def position(index:Int) : Pos = {
-    val row = index / width
-    Pos(row, index - row*height)
-  }
+  def width:Int
+  def height:Int
+}
 
-  def move(pos:Pos):Boolean = {
+private class BoardImp[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) extends Board[T] {
+
+  private val length:Int = width * height
+  private var cells:Seq[T] = init(length)
+  private var zeroIndex = findZero()
+
+  override def ordered():Boolean = cells == dataProvider.reference()
+
+  override def move(pos:Pos):Boolean = {
+
     /**
-      * Swap sequence of cells with zero positioned cell
+      * Returns an step size of an offset in case move is legal.
+      * Move is legal in case it's on position is on the same row or on the same column as a zero element
+      * In case move is legal there are 4 step variations:
       *
-      * @param list list of positions to swap
-      * @return true in case there was a swap otherwise false
+      * - -1 (Right) in case position is on the left side from zero element and we need to move it from left to right
+      * - 1 (Left) in case position is on the right from zero element and we need to move it from right to left
+      * - -4 (Top) position is in the bottom as to zero and we need to move it from bottom to top
+      * - 4 (Bottom) position is on the top as to zero and we need to move it from top to bottom
+      * - 0 (None) in this case there is not orthogonal intersection between position and zero element and we don't need to move it
+      *
+      * @param startIndex index of a start position
+      * @return Integer representation of offset size
       */
-    def swapCells(list:Seq[Pos]):Boolean = {
-      var swapped = false
-      for (pos <- list.reverse) {
-        val zero = cells(cellIndex(zeroPos))
-        cells(cellIndex(zeroPos)) = cells(cellIndex(pos))
-        cells(cellIndex(pos)) = zero
-        zeroPos = pos
-        swapped = true
-      }
-      swapped
+    def stepOffset(startIndex:Int): Int = {
+      if(startIndex/width - zeroIndex/width == 0)
+        if(startIndex%width - zeroIndex%width < 0)  1 else -1
+      else if (startIndex%width - zeroIndex%width == 0)
+        if(startIndex/width - zeroIndex/width < 0) width else -width
+      else
+        0
     }
+    
+    def swapTuples(elems:Seq[T]) = for((el,index) <-elems.zipWithIndex)
+      yield (el, elems(if(index+1>elems.length-1) 0 else index+1))
 
-    def moveDirection(start:Pos, end:Pos): Seq[Pos] = {
-      start.directionTo(end) match {
-        case dir @ (BottomToTop(_,_) | TopToBottom(_,_)) => for (i <- dir.from until dir.to by dir.step) yield Pos(i, start.col)
-        case dir @ (LeftToRight(_,_) | RightToLeft(_,_)) => for (i <- dir.from until dir.to by dir.step) yield Pos(start.row, i)
-      }
-    }
+    def swapFun(t:(T,T)):PartialFunction[T,T] = { case d:T if d==t._1 => t._2 }
+    def swapDefault(t:Seq[T]):PartialFunction[T,T] = { case d:T if !t.contains(d) => d }
 
-    if (pos.intersect(zeroPos)) {
-      val posList = moveDirection(pos, zeroPos)
-      swapCells(posList)
-    } else {
-      false
+    /* move method */
+    val startIndex = cellIndex(pos)
+    val step = stepOffset(startIndex)
+    if (step !=0 ) {
+      val elements = for (index <- startIndex to zeroIndex by step) yield cells(index)
+      val tuples = swapTuples(elements.reverse)
+      val swapper = (tuples.map(swapFun) ++ Seq(swapDefault(tuples.map(_._1)))).reduce(_ orElse _)
+      cells = cells.map(swapper)
+      return true
     }
+    false
   }
-  def twoDimension() : Seq[Seq[T]] = {
+
+  override def twoDimension() : Seq[Seq[T]] = {
     for (rowIndex <- 0 until width)
       yield
         for(colIndex <- 0 until height)
-          yield cells(cellIndex(Pos(rowIndex, colIndex))).value
+          yield cells(cellIndex(Pos(rowIndex, colIndex)))
   }
+
   /**
     * Initialize game board with data and positions
     */
-  private def init(length: Int): Array[Cell] = {
-    val cells = new Array[Cell](length)
-    for((index) <- 0 until length) {
-      cells(index) = Cell(data(index), position(index))
-    }
-    cells
+  private def init(length: Int): Seq[T] = {
+    for((index) <- 0 until length)
+      yield data(index)
   }
+
+  private def data(index:Int) : T = dataProvider.value(index)
 
   private def cellIndex(pos:Pos):Int = pos.row * width + pos.col
 
   // We assume that provider must return us a list with ZERO element
-  private def findZeroPos():Pos = cells.filter(_.value == dataProvider.zero()).map(_.pos).head
-
-  case class Cell(value:T, pos: Pos)
+  private def findZero():Int = cells.zipWithIndex.filter(_._1 == dataProvider.zero()).map(_._2).head
 }
 
-/**
-  * Represent moving directions of cells on a board based on the start and end positions of a move.
-  * Direction consists of `from` and `to` positions that define an amount of cells to move.
-  * A `step` field defines direction based on vertical or horizontal position.
-  * In case of horizontal movements from right to left `step` must be `-1` otherwise `1`. Same for vertical movements.
-  *
-  * @param from starting index of movement
-  * @param to end index of movement
-  * @param step amount of steps to move
-  */
-sealed abstract class MoveDirection(val from:Int, val to:Int, val step:Int)
-case class LeftToRight(override val from:Int, override val to:Int) extends MoveDirection(from, to, 1)
-case class RightToLeft(override val from:Int, override val to:Int) extends MoveDirection(from, to, -1)
-case class TopToBottom(override val from:Int, override val to:Int) extends MoveDirection(from, to, 1)
-case class BottomToTop(override val from:Int, override val to:Int) extends MoveDirection(from, to, -1)
+object ClassicFifteenBoard {
+  def apply: Board[Int] = new BoardImp[Int](4,4)(new FifteenDataProvider())
+}
 
 /**
   * Position of a cell on the board that is defined as row and column numbers.
@@ -103,22 +119,4 @@ case class BottomToTop(override val from:Int, override val to:Int) extends MoveD
   * @param row row index of a position
   * @param col column index of a position
   */
-case class Pos(row:Int, col:Int) {
-  def intersect(pos:Pos): Boolean = sameRow(pos) || sameColumn(pos)
-
-  private def sameRow(pos: Pos) = row == pos.row
-
-  private def sameColumn(pos: Pos) = col == pos.col
-
-  def directionTo(end:Pos):MoveDirection = {
-    if (sameColumn(end)) {
-      if (isBottomTo(end)) BottomToTop(row, end.row) else TopToBottom(row, end.row)
-    } else {
-      if (isRightTo(end)) RightToLeft(col, end.col) else LeftToRight(col, end.col)
-    }
-  }
-
-  private def isRightTo(pos: Pos) = col > pos.col
-
-  private def isBottomTo(pos: Pos) = row > pos.row
-}
+case class Pos(row:Int, col:Int)

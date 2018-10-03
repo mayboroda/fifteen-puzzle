@@ -34,7 +34,7 @@ trait Board[T] {
   def height:Int
 }
 
-private class BoardImp[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) extends Board[T] {
+private class SeqBoard[T](val width:Int, val height:Int)(dataProvider: DataProvider[T]) extends Board[T] {
 
   private val length:Int = width * height
   private var cells:Seq[T] = init(length)
@@ -42,6 +42,20 @@ private class BoardImp[T](val width:Int, val height:Int)(dataProvider: DataProvi
 
   override def ordered():Boolean = cells == dataProvider.reference()
 
+  /**
+    * In order to move elements in SeqBoard we have to generate another board based on the current one knowing
+    * positions of all offset that we have to do in the board
+    * =Algorithm=
+    * 1. We have to define whether we have intersection with zero element
+    * 2. We have to get an offset step in order to get elements that needs to be moved
+    * 3. We generate tuples of elements that we want to swap during board regeneration
+    * 4. Construct a PartialFunction for each tuple and one function for rest elements
+    * 5. Combine all functions in one with `orElse` method
+    * 6. Map existing cells with final function
+    *
+    * @param pos position of a cell that should be moved
+    * @return `true` in case cell was moved otherwise `false`
+    */
   override def move(pos:Pos):Boolean = {
 
     /**
@@ -59,27 +73,27 @@ private class BoardImp[T](val width:Int, val height:Int)(dataProvider: DataProvi
       * @return Integer representation of offset size
       */
     def stepOffset(startIndex:Int): Int = {
+      if (startIndex == zeroIndex) return 0
       if(startIndex/width - zeroIndex/width == 0)
-        if(startIndex%width - zeroIndex%width < 0)  1 else -1
+        if(startIndex%width - zeroIndex%width < 0)  -1 else 1
       else if (startIndex%width - zeroIndex%width == 0)
-        if(startIndex/width - zeroIndex/width < 0) width else -width
+        if(startIndex/width - zeroIndex/width < 0) -width else width
       else
         0
     }
-    
-    def swapTuples(elems:Seq[T]) = for((el,index) <-elems.zipWithIndex)
+
+    def tuplesToSwap(elems:Seq[T]) = for((el,index) <-elems.zipWithIndex)
       yield (el, elems(if(index+1>elems.length-1) 0 else index+1))
 
-    def swapFun(t:(T,T)):PartialFunction[T,T] = { case d:T if d==t._1 => t._2 }
-    def swapDefault(t:Seq[T]):PartialFunction[T,T] = { case d:T if !t.contains(d) => d }
+    def swapTupleFunction(t:(T,T)):PartialFunction[T,T] = { case d:T if d==t._1 => t._2 }
+    def swapDefaultFunction(t:Seq[T]):PartialFunction[T,T] = { case d:T if !t.contains(d) => d }
 
     /* move method */
     val startIndex = cellIndex(pos)
     val step = stepOffset(startIndex)
     if (step !=0 ) {
-      val elements = for (index <- startIndex to zeroIndex by step) yield cells(index)
-      val tuples = swapTuples(elements.reverse)
-      val swapper = (tuples.map(swapFun) ++ Seq(swapDefault(tuples.map(_._1)))).reduce(_ orElse _)
+      val tuples = tuplesToSwap(for (index <- zeroIndex to startIndex by step) yield cells(index))
+      val swapper = (tuples.map(swapTupleFunction) ++ Seq(swapDefaultFunction(tuples.map(_._1)))).reduce(_ orElse _)
       cells = cells.map(swapper)
       return true
     }
@@ -110,7 +124,7 @@ private class BoardImp[T](val width:Int, val height:Int)(dataProvider: DataProvi
 }
 
 object ClassicFifteenBoard {
-  def apply: Board[Int] = new BoardImp[Int](4,4)(new FifteenDataProvider())
+  def apply: Board[Int] = new SeqBoard[Int](4,4)(new FifteenDataProvider())
 }
 
 /**

@@ -8,23 +8,14 @@ import scala.concurrent.{Await, Future}
 
 class ClassicFifteenGameTest extends FunSuite {
 
-  test("Should count time of playing game after it's creation") {
-    val game = new ClassicFifteenGame(getBoard)
-
-    val future = game.execute(GetDuration)
-    val event = Await.result(future, 1 millis)
-
-    assert(event.asInstanceOf[GameLasts].millis > 0)
-  }
-
   test("Should execute move command") {
     val game = new ClassicFifteenGame(getBoard)
 
     val future = game.execute(MoveCell(1,1))
 
-    val event = Await.result(future, 2 millis)
+    val events = Await.result(future, 2 millis)
 
-    assert(event == CellMoved(1,1))
+    assert(events == Seq(CellMoved(1,1), GameNotCompleted))
   }
 
   test("Should not move a cell in case of a wrong position") {
@@ -32,9 +23,9 @@ class ClassicFifteenGameTest extends FunSuite {
 
     val future = game.execute(MoveCell(0,0))
 
-    val event = Await.result(future, 2 millis)
+    val events = Await.result(future, 2 millis)
 
-    assert(event == CellNotMoved)
+    assert(events == Seq(CellNotMoved, GameNotCompleted))
   }
 
   test("Should get game status") {
@@ -44,7 +35,7 @@ class ClassicFifteenGameTest extends FunSuite {
     val future = game.execute(GetStatus)
 
     Await.result(future, 1 millis) match {
-      case GameStatus(duration, moves) => assert(moves == 0); assert(duration > 0)
+      case GameState(status, duration, moves, _) => assert(status==Started); assert(moves == 0); assert(duration > 0)
       case _ => fail("Wrong event happened")
     }
   }
@@ -56,8 +47,7 @@ class ClassicFifteenGameTest extends FunSuite {
       game.execute(MoveCell(1,1)),
       game.execute(MoveCell(3,3)),
       game.execute(GetStatus),
-      game.execute(GetBoard),
-      game.execute(GetDuration)
+      game.execute(GetBoard)
     )
     val moves = Future.sequence(futures)
     val events = Await.result(moves, 1 millis)
@@ -65,7 +55,7 @@ class ClassicFifteenGameTest extends FunSuite {
     Await.result(game.execute(MoveCell(0,1)), 1 millis)
 
     val status = Await.result(game.execute(GetStatus), 1 millis)
-    assert(status.asInstanceOf[GameStatus].moveAmount == 2)
+    assert(status.asInstanceOf[GameState[Int]].moveAmount == 2)
   }
 
   test("Should complete game in two moves") {
@@ -77,10 +67,11 @@ class ClassicFifteenGameTest extends FunSuite {
       game.execute(MoveCell(3,3))
     )
 
-    Await.result(Future.sequence(futures), 1 millis)
+    Await.result(Future.sequence(futures), 3 millis)
 
-    val status = Await.result(game.execute(GetStatus), 1 millis)
-    assert(status.asInstanceOf[GameCompleted].status != null)
+    val state = Await.result(game.execute(GetStatus), 1 millis).asInstanceOf[GameState[Int]]
+    assert(state.status == Completed)
+    assert(state.moveAmount == 2)
   }
 
   private def getBoard = {

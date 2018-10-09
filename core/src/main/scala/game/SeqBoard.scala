@@ -82,7 +82,7 @@ private class SeqBoard[T](val width:Int, val height:Int)(dataProvider: DataProvi
       yield data(index)
   }
 
-  private def data(index:Int) : T = dataProvider.value(index)
+  private def data(index:Int) : T = dataProvider.values(index)
 
   private def cellIndex(pos:Pos):Int = pos.row * width + pos.col
 

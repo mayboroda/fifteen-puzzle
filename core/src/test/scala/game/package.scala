@@ -32,8 +32,6 @@ package object game {
       } yield data(rowIndex)(colIndex)
     }
 
-    override def value(index: Int): Int = values(index)
-
     override def zero(): Int = 0
   }
 }

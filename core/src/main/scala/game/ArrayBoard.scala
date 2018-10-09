@@ -12,7 +12,7 @@ private class ArrayBoard[T](val width:Int, val height:Int)(dataProvider: DataPro
     */
   def ordered():Boolean = cells.map(_.value).toSeq == dataProvider.reference()
 
-  private def data(index:Int) : T = dataProvider.value(index)
+  private def data(index:Int) : T = dataProvider.values(index)
 
   private def position(index:Int) : Pos = {
     val row = index / width

@@ -1,0 +1,28 @@
+@startuml
+
+interface Game {
++ execute(GameCommand) : Future[Seq[GameEvent]]
++ execute(GameQuery) : Future[GameView]
+}
+
+interface Board<T> {
++ move(position:Pos) : Boolean
++ width():Int
++ height():Int
++ ordered():Boolean
++ twoDimension(): Seq[Seq[T]]
+}
+
+interface DataProvider<T> {
+    + reference():Seq[T]
+    + values():Seq[T]
+    + zero():T
+}
+
+Game <|-- ClassicFifteenGame
+Board <|-- ArrayBoard
+DataProvider <|-- FifteenDataProvider
+ArrayBoard -> DataProvider: has
+ClassicFifteenGame -> Board: has
+
+@enduml

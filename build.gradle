@@ -26,6 +26,15 @@ project(':game-cli') {
 }
 
 project(':game-fx') {
+
+    jar {
+        manifest {
+            attributes 'Main-Class': 'game.Main'
+        }
+        from {
+            configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        }
+    }
     dependencies {
         compile project(":core")
     }

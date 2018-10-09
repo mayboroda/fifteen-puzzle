@@ -93,7 +93,7 @@ class Main extends Application {
   }
 
   private def updateMoves(moves:Int): Unit = {
-    println(s"Moves updated: $moves")
+    // println(s"Moves updated: $moves")
   }
 
   private def doNothing(): Unit = { /* no action */ }

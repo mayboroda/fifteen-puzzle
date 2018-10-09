@@ -24,3 +24,9 @@ project(':game-cli') {
         compile project(":core")
     }
 }
+
+project(':game-fx') {
+    dependencies {
+        compile project(":core")
+    }
+}

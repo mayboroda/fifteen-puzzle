@@ -1,5 +1,6 @@
 include ':core',
-        ':game-cli'
+        ':game-cli',
+        ':game-fx'
 
 rootProject.name = 'fifteen-puzzle'
 
